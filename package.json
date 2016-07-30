@@ -1,0 +1,27 @@
+{
+  "name": "yodel",
+  "version": "0.0.1",
+  "description": "Yodel wraps JavaScript's native `fetch` API with added model validation.",
+  "main": "yodel.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mgrahamjo/yodel.git"
+  },
+  "keywords": [
+    "fetch",
+    "ajax",
+    "validation",
+    "yodel",
+    "model",
+    "json"
+  ],
+  "author": "mgrahamjo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mgrahamjo/yodel/issues"
+  },
+  "homepage": "https://github.com/mgrahamjo/yodel#readme"
+}
