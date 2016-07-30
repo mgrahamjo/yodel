@@ -1,7 +1,7 @@
 {
   "name": "yodel",
-  "version": "0.0.1",
-  "description": "Yodel wraps JavaScript's native `fetch` API with added model validation.",
+  "version": "0.0.2",
+  "description": "Yodel wraps JavaScript's native fetch API with added model validation.",
   "main": "yodel.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
