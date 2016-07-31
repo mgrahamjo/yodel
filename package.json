@@ -1,6 +1,6 @@
 {
   "name": "yodel",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Yodel wraps JavaScript's native fetch API with added model validation.",
   "main": "yodel.js",
   "scripts": {

@@ -7,15 +7,15 @@ Yodel wraps JavaScript's native `fetch` API (the new replacement for XMLHTTPRequ
 - `url`: The AJAX endpoint. Query parameters can be included here and/or at request time.
 - `request`: Optional overrides for the [fetch configuration defaults](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#Supplying_request_options).
 - `transform`: An optional method which can perform arbitrary transformations on validated data.
-- validation: An object that mirrors the data you expect, with validation rules in place of values.
+- `validation`: An object that mirrors the data you expect, with validation rules in place of values.
 
 Supported validation types:
 
-- type: string, number, array
-- required: true, false (false enforces that the field does not exist)
-- regex: Regular expression literal
-- date: true/false (enforces that the field can or cannot be parsed by JavaScript's native Date object)
-- custom: a function that is passed the field and returns true or false
+- type [string]: 'string', 'number', 'array'
+- required [boolean]: true, false (false enforces that the field does not exist)
+- regex [regular expression]: Regular expression literal
+- date [boolean]: true, false (enforces that the field can or cannot be parsed by JavaScript's native Date object)
+- custom [function]: a function that is passed the field and returns true or false
 
 `yodel` returns an object with the following methods:
 
