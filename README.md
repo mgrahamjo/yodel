@@ -11,7 +11,7 @@ Yodel wraps JavaScript's native `fetch` API (the new replacement for XMLHTTPRequ
 
 Supported validation types:
 
-- type [string]: 'string', 'number', 'array'
+- type [string]: 'string', 'number', 'boolean', 'array'
 - required [boolean]: true, false (false enforces that the field does not exist)
 - regex [regular expression]: Regular expression literal
 - date [boolean]: true, false (enforces that the field can or cannot be parsed by JavaScript's native Date object)
@@ -27,7 +27,7 @@ Supported validation types:
 ## Example
 
 ```javascript
-const post = yodel({
+const users = yodel({
 	url: 'http://jsonplaceholder.typicode.com/users',
 	request: {
 		mode: 'cors',
@@ -62,7 +62,7 @@ const post = yodel({
 	]
 });
 
-post.get({
+users.get({
 	id: 1
 }).then(data => {
 	console.log(data);
