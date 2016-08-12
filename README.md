@@ -16,6 +16,12 @@ Supported validation types:
 - regex [regular expression]: Regular expression literal
 - date [boolean]: true, false (enforces that the field can or cannot be parsed by JavaScript's native Date object)
 - custom [function]: a function that is passed the field and returns true or false
+- minLength [number]: enforces that the value has a length property greater than or equal to this number
+- maxLength [number]: enforces that the value has a length property less than or equal to this number
+- length [number]: enforces that the value has a length property that equals this number
+- min [number]: enforces that the value is greater than or equal to this value (does not enforce type)
+- max [number]: enforces that the value is less than or equal to this value (does not enforce type)
+- equal [any]: enforces that the value is this value (enforces type)
 
 `yodel` returns an object with the following methods:
 
@@ -28,46 +34,48 @@ Supported validation types:
 
 ```javascript
 const users = yodel({
-	url: 'http://jsonplaceholder.typicode.com/users',
-	request: {
-		mode: 'cors',
-		cache: 'default'
-	},
-	transform: data => {
-		data.transformed = true;
-	},
-	validation: [
-		{
-			id: {
-				type: 'number',
-				required: true
-			},
-			name: {
-				type: 'string',
-				required: true
-			},
-			address: {
-				street: {
-					type: 'string',
-					required: true,
-					custom: data => {
-						return data.indexOf('foobarbaz') === -1;
-					}
-				},
-				zipcode: {
-					regex: /\d+/
-				}
-			}
-		}
-	]
+  url: 'http://jsonplaceholder.typicode.com/users',
+  request: {
+    mode: 'cors',
+    cache: 'default'
+  },
+  transform: data => {
+    data.transformed = true;
+  },
+  validation: [
+    {
+      id: {
+        type: 'number',
+        required: true,
+        min: 1,
+        max: 10
+      },
+      name: {
+        type: 'string',
+        required: true,
+        minLength: 1,
+        maxLength: 255
+      },
+      address: {
+        street: {
+          type: 'string',
+          required: true,
+          custom: data => {
+            return true;
+          }
+        },
+        zipcode: {
+          regex: /\d+/
+        }
+      }
+    }
+  ]
 });
-
-users.get({
-	id: 1
-}).then(data => {
-	console.log(data);
+ 
+users.get().then(data => {
+  console.log(data);
 }).catch(error => {
-	console.error(error);
+  console.error(error);
 });
 ```
 

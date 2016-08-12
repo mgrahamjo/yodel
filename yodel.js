@@ -1,213 +1,253 @@
 (() => {
 
-	function enforce(v) {
+  function enforce(v, rule) {
 
-		return v.okay ? '' : `${v.key} did not pass the validation "${v.rule}: ${v.expected}". Actual value was ${v.value}.\n\n`;
+    return v.okay ? '' : 
+      `${v.key} did not pass the validation "${rule}: ${v.expected}". Actual value was ${v.value}.\n\n`;
 
-	}
+  }
 
-	const enforcers = {
+  const enforcers = {
 
-		type: v => {
+    type: v => {
 
-			v.rule = 'type';
+      v.expected = v.expected.toLowerCase();
+      
+      v.okay = v.expected === 'array'
+            ? Array.isArray(v.value)
+            : typeof v.value === v.expected;
 
-			v.expected = v.expected.toLowerCase();
-			
-			v.okay = v.expected === 'array'
-						? Array.isArray(v.value)
-						: typeof v.value === v.expected;
+      return enforce(v, 'type');
 
-			return enforce(v);
+    },
 
-		},
+    required: v => {
 
-		required: v => {
+      v.okay = v.expected ? v.value : !v.value;
 
-			v.rule = 'required';
+      return enforce(v, 'required');
 
-			v.okay = v.expected ? v.value : !v.value;
+    },
 
-			return enforce(v);
+    regex: v => {
 
-		},
+      v.okay = v.value.toString().match(v.expected);
 
-		regex: v => {
+      return enforce(v, 'regex');
 
-			v.rule = 'regex';
+    },
 
-			v.okay = v.value.toString().match(v.expected);
+    date: v => {
 
-			return enforce(v);
+      const validDate = Date.parse(v.value) >= 0;
 
-		},
+      v.okay = v.expected ? validDate : !validDate;
 
-		date: v => {
+      return enforce(v, 'date');
 
-			let validDate = Date.parse(v.value) >= 0;
+    },
 
-			v.rule = 'date';
+    custom: v => {
 
-			v.okay = v.expected ? validDate : !validDate;
+      v.okay = v.expected(v.value);
 
-			return enforce(v);
+      return enforce(v, 'custom');
 
-		},
+    },
 
-		custom: v => {
+    minLength: v => {
 
-			v.rule = 'custom';
+      v.okay = v.value.length >= v.expected;
 
-			v.okay = v.expected(v.value);
+      return enforce(v, 'minLength');
 
-			return enforce(v);
+    },
 
-		}
-	}
+    length: v => {
 
-	function validate(data, rules) {
+      v.okay = v.value.length === v.expected;
 
-		let error = '';
+      return enforce(v, 'length');
 
-		if (Array.isArray(rules)) {
+    },
 
-			error += enforcers.type({
-				expected: 'array',
-				key: 'data',
-				value: data
-			});
+    maxLength: v => {
 
-			if (!error) {
+      v.okay = v.value.length <= v.expected;
 
-				data.forEach(datum => {
-					error += validate(datum, rules[0]);
-				});
+      return enforce(v, 'maxLength');
 
-			}
+    },
 
-		} else if (typeof rules === 'object') {
+    min: v => {
 
-			Object.keys(rules).forEach(key => {
+      v.okay = v.value >= v.expected;
 
-				let rule = rules[key],
-					value = data[key];
+      return enforce(v, 'min');
 
-				if ((!Array.isArray(value)) && typeof value === 'object') {
-					
-					error += validate(value, rule);
+    },
 
-				} else {
+    max: v => {
 
-					Object.keys(rule).forEach(ruleName => {
+      v.okay = v.value <= v.expected;
 
-						error += enforcers[ruleName]({
-							expected: rule[ruleName],
-							key: key,
-							value: value
-						});
+      return enforce(v, 'max');
 
-					});
+    },
 
-				}
+    equal: v => {
 
-			});
+      v.okay = v.value === v.expected;
 
-		}
+      return enforce(v, 'equal');
 
-		return error;
+    }
 
-	}
+  };
 
-	function process(config) {
+  function findErrors(data, rules) {
 
-		return data => {
+    let error = '';
 
-			let error = validate(data, config.validation);
+    if (Array.isArray(rules)) {
 
-			return new Promise((resolve, reject) => {
+      error += enforcers.type({
+        expected: 'array',
+        key: 'data',
+        value: data
+      });
 
-				if (error) {
-					
-					reject(error);
+      if (!error) {
 
-				} else if (typeof config.transform === 'function') {
+        data.forEach(datum => {
+          error += findErrors(datum, rules[0]);
+        });
 
-					config.transform(data);
+      }
 
-				}
+    } else if (typeof rules === 'object') {
 
-				resolve(data);
+      Object.keys(rules).forEach(key => {
 
-			});
+        const rule = rules[key],
+          value = data[key];
 
-		};
+        if (Array.isArray(rule) || typeof value === 'object') {
+          
+          error += findErrors(value, rule);
 
-	}
+        } else if (typeof value !== 'undefined' || rule.required) {
 
-	function serialize(url, data) {
+          Object.keys(rule).forEach(ruleName => {
 
-		if (data) {
+            error += enforcers[ruleName]({
+              expected: rule[ruleName],
+              key: key,
+              value: value
+            });
 
-			let queryString = Object.keys(data).map(key => {
+          });
 
-				return `${key}=${data[key]}`;
+        }
 
-			}).join('&');
+      });
 
-			url += url.indexOf('?') === -1 ? '?' : '&';
+    }
 
-			url += queryString;
+    return error;
 
-		}
+  }
 
-		return url;
+  function process(config) {
 
-	}
+    return data => {
 
-	function http(method, config, params, body) {
+      const error = findErrors(data, config.validation);
 
-		config.request 		  = config.request || {};
-		config.request.method = method;
-		config.request.body   = body;
+      return new Promise((resolve, reject) => {
 
-		return fetch(serialize(config.url, params), config.request).then(res => {
+        if (error) {
+          
+          reject(error);
 
-			return res.json().then(process(config));
+        } else if (typeof config.transform === 'function') {
 
-		});
+          config.transform(data);
 
-	}
+        }
 
-	window.yodel = config => {
+        resolve(data);
 
-		return {
+      });
 
-			get: params => {
+    };
 
-				return http('GET', config, params);
+  }
 
-			},
+  function serialize(url, data) {
 
-			delete: params => {
+    if (data) {
 
-				return http('DELETE', config, params);
+      const queryString = Object.keys(data).map(key => {
 
-			},
+        return `${key}=${data[key]}`;
 
-			post: (body, params) => {
+      }).join('&');
 
-				return http('POST', config, params, body);
+      url += url.indexOf('?') === -1 ? '?' : '&';
 
-			},
+      url += queryString;
 
-			put: (body, params) => {
+    }
 
-				return http('PUT', config, params, body);
+    return url;
 
-			}
+  }
 
-		};
+  function http(method, config, params, body) {
 
-	};
+    config.request        = config.request || {};
+    config.request.method = method;
+    config.request.body   = body;
+
+    return fetch(serialize(config.url, params), config.request).then(res => {
+
+      return res.json().then(process(config));
+
+    });
+
+  }
+
+  window.yodel = config => {
+
+    return {
+
+      get: params => {
+
+        return http('GET', config, params);
+
+      },
+
+      delete: params => {
+
+        return http('DELETE', config, params);
+
+      },
+
+      post: (body, params) => {
+
+        return http('POST', config, params, body);
+
+      },
+
+      put: (body, params) => {
+
+        return http('PUT', config, params, body);
+
+      }
+
+    };
+
+  };
 
 })()
